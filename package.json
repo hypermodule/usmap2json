@@ -1,0 +1,17 @@
+{
+  "name": "usmap2json",
+  "version": "0.0.1",
+  "description": "Parses UE modding .usmap files and displays the result as JSON.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && copyfiles index.html 'lib/*.js' dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "hypermodule",
+  "license": "MIT",
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "typescript": "^5.8.3"
+  }
+}

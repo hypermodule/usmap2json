@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>usmap2json</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #drop-area {
+            border: 2px dotted #ccc;
+            border-radius: 5px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+
+        #drop-area.highlight {
+            border-color: #666;
+            background-color: #f0f0f0;
+        }
+
+        #output-container {
+            position: relative;
+        }
+
+        #output-area {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            min-height: 100px;
+        }
+
+        #output-area.error {
+            border-color: #f1aeb5;
+            background-color: #f8d7da;
+        }
+
+        #copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        #copy-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #copy-btn:active {
+            background-color: #004085;
+        }
+
+        #copy-btn.copied {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+<h1>usmap2json</h1>
+<div id="drop-area">
+    <p>Drag and drop .usmap file here</p>
+</div>
+<h2>JSON:</h2>
+<div id="output-container">
+    <button id="copy-btn" style="display: none;">Copy</button>
+    <pre id="output-area">No file dropped yet.</pre>
+</div>
+<script src="lib/brotli.js"></script>
+<script type="module">
+    import parseUsmap from "./index.js";
+
+    const dropArea = document.getElementById("drop-area");
+    const outputArea = document.getElementById("output-area");
+    const copyBtn = document.getElementById("copy-btn");
+
+    // Prevent default drag behaviors
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    // Highlight drop area when file is dragged over it
+    ["dragenter", "dragover"].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    // Remove highlight when file leaves the drop area
+    ["dragleave", "drop"].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    // Handle dropped files
+    dropArea.addEventListener("drop", handleDrop, false);
+
+    copyBtn.addEventListener("click", copyToClipboard);
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight() {
+        dropArea.classList.add("highlight");
+    }
+
+    function unhighlight() {
+        dropArea.classList.remove("highlight");
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    }
+
+    function handleFile(file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const arrayBuffer = e.target.result;
+            const bytes = new Uint8Array(arrayBuffer);
+
+            try {
+                const usmap = parseUsmap(bytes);
+                outputArea.classList.remove("error");
+                outputArea.textContent = JSON.stringify(usmap, null, 2);
+
+                // Show copy button and reset its state
+                copyBtn.style.display = "block";
+                copyBtn.textContent = "Copy";
+                copyBtn.classList.remove("copied");
+            } catch (error) {
+                outputArea.classList.add("error");
+                outputArea.textContent = error.message;
+
+                // Hide copy button for errors
+                copyBtn.style.display = "none";
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+
+    async function copyToClipboard() {
+        try {
+            await navigator.clipboard.writeText(outputArea.textContent);
+
+            copyBtn.textContent = "Copied!";
+            copyBtn.classList.add("copied");
+
+            setTimeout(() => {
+                copyBtn.textContent = "Copy";
+                copyBtn.classList.remove("copied");
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+        }
+    }
+</script>
+</body>
+</html>
