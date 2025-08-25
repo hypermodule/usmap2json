@@ -76,6 +76,8 @@
 <h1>usmap2json</h1>
 <div id="drop-area">
     <p>Drag and drop .usmap file here</p>
+    <input id="file-input" type="file" accept=".usmap" style="display:none" />
+    <button id="pick-btn" type="button">Choose file</button>
 </div>
 <h2>JSON:</h2>
 <div id="output-container">
@@ -89,6 +91,8 @@
     const dropArea = document.getElementById("drop-area");
     const outputArea = document.getElementById("output-area");
     const copyBtn = document.getElementById("copy-btn");
+    const pickBtn = document.getElementById("pick-btn");
+    const fileInput = document.getElementById("file-input");
 
     // Prevent default drag behaviors
     ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
@@ -106,8 +110,20 @@
         dropArea.addEventListener(eventName, unhighlight, false);
     });
 
-    // Handle dropped files
     dropArea.addEventListener("drop", handleDrop, false);
+    pickBtn.addEventListener("click", () => fileInput.click());
+    dropArea.addEventListener("click", (e) => {
+        // Avoid triggering when clicking the button itself (already handled)
+        if (e.target === pickBtn) return;
+        fileInput.click();
+    });
+    fileInput.addEventListener("change", () => {
+        if (fileInput.files && fileInput.files.length > 0) {
+            handleFile(fileInput.files[0]);
+            // Reset so selecting the same file again still triggers "change"
+            fileInput.value = "";
+        }
+    });
 
     copyBtn.addEventListener("click", copyToClipboard);
 
